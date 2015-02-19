@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="javaee" default="deploy">
+
+    <property environment="env"/>
+    <property file="build.properties"/>
+    <property name="tomcatHome" location="${env.CATALINA_HOME}" />
+    <property name="webroot" location="${tomcatHome}/webapps"/>
+
+    <path id="compile.classpath">
+        <fileset dir="WebContent/WEB-INF/lib">
+            <include name="*.jar"/>
+        </fileset>
+        <fileset dir="libs">
+            <include name="*.jar"/>
+        </fileset>
+    </path>
+
+
+    <target name="setup">
+        <mkdir dir="build/classes/META-INF"/>
+        <mkdir dir="dist"/>
+        <!--
+        <mkdir dir="WebContent/WEB-INF/lib"/>
+        <mkdir dir="WebContent/META-INF"/>
+        -->
+        <!--<mkdir dir="test"/>-->
+    </target>
+    
+    <target name="init">
+        <delete>
+            <fileset dir="dist">
+                <include name="*.war"/>
+            </fileset>
+        </delete>
+    </target>
+
+    <target name="compile" depends="init" >
+        <javac destdir="build/classes" debug="true" srcdir="src">
+            <classpath refid="compile.classpath"/>
+        </javac>
+    </target>
+
+    <target name="war" depends="compile">
+        <copyfile src="src/META-INF/hibernate.cfg.xml" dest="build/classes/META-INF/hibernate.cfg.xml"/>
+        <copyfile src="src/META-INF/persistence.xml" dest="build/classes/META-INF/persistence.xml"/>
+        <copyfile src="src/tinylog.properties" dest="build/classes/tinylog.properties"/>
+        <war destfile="dist/${deploymentTargetName}.war" webxml="WebContent/WEB-INF/web.xml">
+        <fileset dir="WebContent"/>
+            <lib dir="WebContent/WEB-INF/lib"/>
+            <classes dir="build/classes"/>
+        </war>
+    </target>
+
+    <target name="deploy" depends="war">
+        <copyfile src="dist/${deploymentTargetName}.war" dest="${webroot}/${deploymentTargetName}.war"/>
+    </target>
+
+    <target name="undeploy">
+        <delete file="${webroot}/${deploymentTargetName}.war"/>
+        <delete dir="${webroot}/${deploymentTargetName}"/>
+    </target>
+
+    <target name="clean">
+        <delete dir="dist" />
+        <delete dir="build" />
+    </target>
+
+</project>

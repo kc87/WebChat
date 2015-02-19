@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns="http://xmlns.jcp.org/xml/ns/javaee"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee
+         http://xmlns.jcp.org/xml/ns/javaee/web-app_3_1.xsd"
+         version="3.1">
+
+    <welcome-file-list>
+        <welcome-file>register.jsf</welcome-file>
+    </welcome-file-list>
+
+    <!--
+    <error-page>
+        <exception-type>javax.faces.application.ViewExpiredException</exception-type>
+        <location>/error/sessionexpired.html</location>
+    </error-page>
+    -->
+    <!--
+    <context-param>
+        <param-name>javax.faces.W</param-name>
+        <param-value>/WEB_INF/resources</param-value>
+    </context-param>
+    -->
+    <!--
+    <context-param>
+       <description>Development</description>
+       <param-name>javax.faces.PROJECT_STAGE</param-name>
+       <param-value>Development</param-value>
+    </context-param>
+    -->
+
+    <servlet>
+        <servlet-name>Faces Servlet</servlet-name>
+        <servlet-class>javax.faces.webapp.FacesServlet</servlet-class>
+        <load-on-startup>1</load-on-startup>
+    </servlet>
+
+    <servlet-mapping>
+        <servlet-name>Faces Servlet</servlet-name>
+        <url-pattern>*.jsf</url-pattern>
+    </servlet-mapping>
+
+    <session-config>
+       <session-timeout>5</session-timeout>
+    </session-config>
+
+    <resource-env-ref>
+        <resource-env-ref-name>BeanManager</resource-env-ref-name>
+        <resource-env-ref-type>javax.enterprise.inject.spi.BeanManager</resource-env-ref-type>
+    </resource-env-ref>
+
+    <listener>
+        <listener-class>
+            ws.WsServer
+        </listener-class>
+    </listener>
+
+</web-app>
