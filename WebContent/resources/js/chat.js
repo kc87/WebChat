@@ -50,7 +50,8 @@ Chat = (function (window)
       $("loginInput").style.display = "";
       $("loginGreeting").style.display = "none";
       $("passwordInput").value = "";
-      $("chatOutput").innerHTML = "";
+      $("chatMsgBox").innerHTML = "";
+      $("userListBox").innerHTML = "";
       $("statsOutput").style.color = "#666";
       $("statsOutput").textContent = "\u2022 Offline!";
 
@@ -171,6 +172,10 @@ Chat = (function (window)
             $("statsOutput").style.color = "#0f0";
             $("statsOutput").textContent = "\u2022 " + msg.STATS_MSG;
 
+            if (msg.USER_LIST) {
+               showUserList(msg.USER_LIST);
+            }
+
             //works only the first time dude!
             if ($("doLoginStranger")) {
                $("doLoginStranger").style.display = "none";
@@ -195,8 +200,8 @@ Chat = (function (window)
          newMsgElem.id = "msg" + msgCounter;
          newMsgElem.style.color = msg.CHAT_MSG.COLOR;
          newMsgElem.innerHTML = "<div>" + msg.CHAT_MSG.FROM + " ></div><div>" + msg.CHAT_MSG.MSG + "</div>";
-         $("chatOutput").appendChild(newMsgElem);
-         $("chatOutput").scrollTop = $("chatOutput").scrollHeight;
+         $("chatMsgBox").appendChild(newMsgElem);
+         $("chatMsgBox").scrollTop = $("chatOutput").scrollHeight;
          //$("msg"+msgCounter).style.opacity = "1.0";
          $("msg" + msgCounter).style.left = "0";
          msgCounter++;
@@ -208,6 +213,9 @@ Chat = (function (window)
             showInfo(msg.INFO_MSG, "#99f");
             //$("statsOutput").style.color = "#0f0";
             $("statsOutput").textContent = "\u2022 " + msg.STATS_MSG;
+            if (msg.USER_LIST) {
+               showUserList(msg.USER_LIST);
+            }
             return;
          }
       }
@@ -237,6 +245,23 @@ Chat = (function (window)
       }, 3000);
    }
 
+
+   function showUserList(userList) {
+      $("userListBox").innerHTML = "";
+
+      for (var i = 0; i < userList.length; i++) {
+         var user = userList[i].split("*", 2)[1];
+         var color = userList[i].split("*", 2)[0];
+         console.log("User:" + user + " Color:" + color);
+
+         var newUserListElem = doc.createElement("DIV");
+         newUserListElem.textContent = user;
+         //newMsgElem.id = "msg" + msgCounter;
+         newUserListElem.style.color = color;
+
+         $("userListBox").appendChild(newUserListElem);
+      }
+   }
 
    init();
 

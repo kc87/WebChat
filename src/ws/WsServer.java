@@ -16,22 +16,23 @@ import ws.protocol.ResultMsg;
 
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
-import javax.websocket.CloseReason;
-import javax.websocket.OnClose;
-import javax.websocket.OnMessage;
-import javax.websocket.OnOpen;
-import javax.websocket.Session;
+import javax.websocket.*;
 import javax.websocket.server.ServerEndpoint;
 import java.io.IOException;
 import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+//@WebListener
 @ServerEndpoint("/ws")
 public class WsServer implements ServletContextListener
 {
    private static final int IDLE_TIMEOUT_SEC = 60;
-   private static final String[] PEER_COLORS = {"#38F", "#f00", "#ff0", "#f08", "#0ff", "#888", "#8ff", "#f6f", "#ff4", "#fff"};
+   private static final String[] PEER_COLORS = {"#38F", "#f00", "#ff0", "#f08", "#0ff", "#888", "#8ff", "#f80", "#ff4", "#fff"};
    private static final int PEER_COLOR_NB = PEER_COLORS.length;
    private static final AbstractMap<String, String> userColorMap = new ConcurrentHashMap<>();
    private static AtomicInteger usersLoggedIn = new AtomicInteger(0);
@@ -50,11 +51,11 @@ public class WsServer implements ServletContextListener
    @OnMessage
    public void onTextMsg(String jsonStr)
    {
-      Gson gson = new GsonBuilder().serializeNulls().create();
+      Gson gson = new GsonBuilder().serializeNulls().create();//new Gson();
 
       try {
          jsonStr = jsonStr.trim();
-         Logger.debug("Rcv.:" + jsonStr + " from: " + thisSession.getId());
+         Logger.debug("Recv.:" + jsonStr + " from: " + thisSession.getId());
          Message clientMsg = gson.fromJson(jsonStr, Message.class);
 
          if (clientMsg.TYPE.equals("ACCOUNT")) {
@@ -81,7 +82,7 @@ public class WsServer implements ServletContextListener
    public void onClose()
    {
       Logger.debug("onClose(): " + thisSession.getId());
-      // Handle close without logout (peer went down due to network trouble etc.)
+      // handle close without logout (peer went down due to network trouble etc.)
       if (thisSession.getUserProperties().containsKey("USER")) {
          logoutUser();
       }
@@ -107,6 +108,8 @@ public class WsServer implements ServletContextListener
          if (thisSession.getUserProperties().containsKey("USER")) {
             LoginMsg loginMsg = new LoginMsg();
             loginMsg.USER = (String) thisSession.getUserProperties().get("USER");
+            serverMsg.USER_LIST = buildUserList(true);
+            Logger.debug("User list:" + Arrays.toString(buildUserList(true)));
             serverMsg.LOGIN_MSG = loginMsg;
             serverMsg.STATS_MSG = usersLoggedIn.get() + " User" + (usersLoggedIn.get() > 1 ? "s " : " ") + "online!";
          }
@@ -128,7 +131,7 @@ public class WsServer implements ServletContextListener
       if (clientMsg.SUBTYPE.equals("MSG")) {
          ChatMsg chatMsg = new ChatMsg();
          broadcastMsg = clientMsg;
-         // You can't trust nobody ;)
+         // you can't trust nobody ;)
          chatMsg.MSG = clientMsg.CHAT_MSG.MSG.replace("<", "&lt;").replace("&", "&amp;");
          chatMsg.COLOR = (String) thisSession.getUserProperties().get("COLOR");
          chatMsg.FROM = (String) thisSession.getUserProperties().get("USER");
@@ -141,14 +144,14 @@ public class WsServer implements ServletContextListener
    private void sendMessage(final Message serverMsg)
    {
       final Gson gson = new Gson();
-      final String jsonStr = gson.toJson(serverMsg);
 
       try {
+         final String jsonStr = gson.toJson(serverMsg);
          if (thisSession.isOpen()) {
             Logger.debug("Send: " + jsonStr + " to: " + thisSession.getId());
             thisSession.getBasicRemote().sendText(jsonStr);
          }
-      } catch (IOException e) {
+      } catch (Exception e) {
          Logger.error(e);
       }
    }
@@ -156,13 +159,18 @@ public class WsServer implements ServletContextListener
    private void broadcastMessage(final Message serverMsg, final boolean includeThis)
    {
       final Gson gson = new Gson();
-      final String jsonStr = gson.toJson(serverMsg);
 
-      for (Session session : thisSession.getOpenSessions()) {
-         if (!includeThis && thisSession.equals(session)) {
-            continue;
+      try {
+         final String jsonStr = gson.toJson(serverMsg);
+
+         for (Session session : thisSession.getOpenSessions()) {
+            if (!includeThis && thisSession.equals(session)) {
+               continue;
+            }
+            session.getAsyncRemote().sendText(jsonStr);
          }
-         session.getAsyncRemote().sendText(jsonStr);
+      } catch (Exception e) {
+         Logger.error(e);
       }
    }
 
@@ -201,7 +209,7 @@ public class WsServer implements ServletContextListener
 
             thisSession.getUserProperties().put("USER", user.getUsername());
 
-            // If a user is active more than once, give him the same color:
+            //if a user is active more than once, give him the same color:
             if (userColorMap.containsKey(user.getUsername())) {
                userColor = userColorMap.get(user.getUsername());
             } else {
@@ -216,6 +224,7 @@ public class WsServer implements ServletContextListener
             joinMsg.SUBTYPE = "JOIN";
             joinMsg.INFO_MSG = user.getUsername() + " has entered the building";
             joinMsg.STATS_MSG = userNb + " User" + (userNb > 1 ? "s " : " ") + "online!";
+            joinMsg.USER_LIST = buildUserList(true);
 
             broadcastMessage(joinMsg, false);
 
@@ -239,14 +248,17 @@ public class WsServer implements ServletContextListener
          resultMsg.MSG = "You have successfully logged out!";
 
          Message unjoinMsg = new Message();
+
          unjoinMsg.TYPE = "INFO";
          unjoinMsg.SUBTYPE = "JOIN";
          unjoinMsg.INFO_MSG = thisSession.getUserProperties().get("USER") + " has left the building";
          unjoinMsg.STATS_MSG = userNb + " User" + (userNb > 1 ? "s " : " ") + "online!";
+         unjoinMsg.USER_LIST = buildUserList(false);
+
+         thisSession.getUserProperties().clear();
 
          broadcastMessage(unjoinMsg, false);
 
-         thisSession.getUserProperties().clear();
       } else {
          resultMsg.CODE = "ERR";
          resultMsg.MSG = "You where not logged in!";
@@ -264,7 +276,7 @@ public class WsServer implements ServletContextListener
    {
       boolean result = false;
 
-      // Close connection to unauthorized peers
+      // close connection to unauthorized peers
       if (thisSession.isOpen()) {
          if (!thisSession.getUserProperties().containsKey("USER")) {
             Logger.debug("Closing connection to unauthorized peer: " + thisSession.getId());
@@ -288,6 +300,24 @@ public class WsServer implements ServletContextListener
       } catch (IOException e) {
          Logger.error(e);
       }
+   }
+
+   private String[] buildUserList(final boolean includeThis)
+   {
+      ArrayList<String> userList = new ArrayList<>();
+
+      for (Session session : thisSession.getOpenSessions()) {
+
+         if (!includeThis && thisSession.equals(session)) {
+            continue;
+         }
+
+         String userName = (String) session.getUserProperties().get("USER");
+         String userColor = (String) session.getUserProperties().get("COLOR");
+         userList.add(userColor + "*" + userName);
+      }
+
+      return (userList.size() == 0) ? null : userList.toArray(new String[userList.size()]);
    }
 
    @Override

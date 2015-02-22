@@ -9,4 +9,5 @@ public class Message
    public ChatMsg CHAT_MSG;
    public String INFO_MSG;
    public String STATS_MSG;
+   public String[] USER_LIST;
 }

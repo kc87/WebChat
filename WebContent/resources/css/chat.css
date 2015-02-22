@@ -45,6 +45,7 @@ header {
 }
 
 #loginBox input[type=button] {
+    color: #000;
     margin: 0 0 0 5px;
     padding: 0 5px;
     font-size: 16px;
@@ -95,15 +96,19 @@ header {
 
 #chatBox {
     position: relative;
-    top: 16%;
+    top: 12%;
     width: 50%;
     height: 60%;
+    min-width: 400px;
+    min-height: 400px;
     margin-left: auto;
     margin-right: auto;
     border-radius: 6px;
     border: 1px outset #f33;
     background: rgba(255, 0, 0, 0.5);
+    box-shadow: 8px 8px 6px rgba(0, 0, 0, 0.6);
 }
+
 
 
 #infoOutput {
@@ -111,7 +116,7 @@ header {
     display: inline-block;
     padding: 4px 8px;
     top: 40px;
-    left: 8px;
+    right: 8px;
     color: #ff0;
     border: 1px solid #666;
     height: 28px;
@@ -124,13 +129,46 @@ header {
     transition: top 0.6s ease-in-out 0s;
 }
 
-
 #chatOutput {
     position: absolute;
     top: 40px;
     left: 8px;
     bottom: 46px;
     right: 8px;
+}
+
+#userListBox {
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 76%;
+    border: 2px inset #ccc;
+    background-color: #444;
+    font-family: Arial, Helvetica, sans-serif;
+    line-height: 1.1;
+    font-size: 22px;
+    font-weight: bold;
+    display: inline-block;
+    vertical-align: top;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    padding: 2px 3px 0 3px;
+}
+
+#userListBox > div {
+    margin-bottom: 2px;
+    padding-left: 5px;
+    background: linear-gradient(to bottom, rgb(60, 60, 60) 0%, rgb(30, 30, 30) 4%, rgb(40, 40, 40) 96%, rgb(0, 0, 0) 100%);
+}
+
+#chatMsgBox {
+    position: absolute;
+    top: 0px;
+    left: 25%;
+    bottom: 0;
+    right: 0;
     border: 2px inset #ccc;
     font-size: 1.5em;
     background-color: #444;
